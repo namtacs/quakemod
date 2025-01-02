@@ -709,7 +709,7 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg)
 		}
 
 		//don't send invisible entities unless they have effects
-		if (ent->alpha == ENTALPHA_ZERO && !((int)ent->v.effects & pr_effects_mask))
+		if (( e<=svs.maxclients && ent != clent && pretendsp.value!=0 && e>=2 ) || (ent->alpha == ENTALPHA_ZERO && !((int)ent->v.effects & pr_effects_mask))) // also make other players invisible if pretendsp
 			continue;
 		//johnfitz
 
@@ -1580,7 +1580,8 @@ void SV_SpawnServer (const char *server)
 	ent->v.movetype = MOVETYPE_PUSH;
 
 	if (coop.value)
-		pr_global_struct->coop = coop.value;
+		if (pretendsp.value==0) pr_global_struct->coop = coop.value;
+		else pr_global_struct->coop = 0; // when pretendsp pretend sp
 	else
 		pr_global_struct->deathmatch = deathmatch.value;
 

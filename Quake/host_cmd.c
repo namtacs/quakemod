@@ -1056,7 +1056,7 @@ static void Host_Savegame_f (void)
 		return;
 	}
 
-	if (svs.maxclients != 1)
+	if (svs.maxclients != 1 && pretendsp.value==0)
 	{
 		Con_Printf ("Can't save multiplayer games.\n");
 		return;
@@ -1081,6 +1081,7 @@ static void Host_Savegame_f (void)
 			Con_Printf ("Can't savegame with a dead player\n");
 			return;
 		}
+		if (pretendsp.value!=0) break; // consider only the local player
 	}
 
 	q_snprintf (name, sizeof(name), "%s/%s", com_gamedir, Cmd_Argv(1));
@@ -1115,6 +1116,7 @@ static void Host_Savegame_f (void)
 	ED_WriteGlobals (f);
 	for (i = 0; i < sv.num_edicts; i++)
 	{
+		//if (( i<=svs.maxclients && i>=2 ) && pretendsp.value!=0) write empty edict; // don't save connected players -- will cause problems and need a way to write empty edicts
 		ED_Write (f, EDICT_NUM(i));
 		fflush (f);
 	}
@@ -1670,9 +1672,9 @@ static void Host_Spawn_f (void)
 		// call the spawn function
 		pr_global_struct->time = sv.time;
 		pr_global_struct->self = EDICT_TO_PROG(sv_player);
-		PR_ExecuteProgram (pr_global_struct->ClientConnect);
+		if ((NUM_FOR_EDICT(ent)==1 || pretendsp.value==0)) PR_ExecuteProgram (pr_global_struct->ClientConnect); // ignore other player when pretendsp
 
-		if ((Sys_DoubleTime() - NET_QSocketGetTime(host_client->netconnection)) <= sv.time)
+		if (pretendsp.value==0 && ((Sys_DoubleTime() - NET_QSocketGetTime(host_client->netconnection)) <= sv.time)) // ignore other player when pretendsp
 			Sys_Printf ("%s entered the game\n", host_client->name);
 
 		PR_ExecuteProgram (pr_global_struct->PutClientInServer);

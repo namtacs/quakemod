@@ -801,7 +801,7 @@ void Sbar_DrawFace (void)
 
 // PGM 01/19/97 - team color drawing
 // PGM 03/02/97 - fixed so color swatch only appears in CTF modes
-	if (rogue && (cl.maxclients != 1) && (teamplay.value>3) && (teamplay.value<7))
+	if (rogue && (pretendsp.value==0&&cl.maxclients != 1) && (teamplay.value>3) && (teamplay.value<7))
 	{
 		int	top, bottom;
 		int	xofs;
@@ -931,7 +931,7 @@ void Sbar_Draw (void)
 	if (scr_viewsize.value < 110) //johnfitz -- check viewsize instead of sb_lines
 	{
 		Sbar_DrawInventory ();
-		if (cl.maxclients != 1)
+		if (pretendsp.value==0&&cl.maxclients != 1)
 			Sbar_DrawFrags ();
 	}
 

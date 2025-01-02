@@ -87,6 +87,8 @@ cvar_t	campaign = {"campaign","0",CVAR_NONE}; // for the 2021 rerelease
 cvar_t	horde = {"horde","0",CVAR_NONE}; // for the 2021 rerelease
 cvar_t	sv_cheats = {"sv_cheats","0",CVAR_NONE}; // for the 2021 rerelease
 
+cvar_t	pretendsp = {"pretendsp","0",CVAR_NOTIFY|CVAR_SERVERINFO};
+
 devstats_t dev_stats, dev_peakstats;
 overflowtimes_t dev_overflows; //this stores the last time overflow messages were displayed, not the last time overflows occured
 
@@ -293,6 +295,8 @@ void Host_InitLocal (void)
 
 	Cvar_RegisterVariable (&temp1);
 
+	Cvar_RegisterVariable (&pretendsp);
+
 	Host_FindMaxClients ();
 }
 
@@ -425,7 +429,7 @@ void SV_DropClient (qboolean crash)
 			NET_SendMessage (host_client->netconnection, &host_client->message);
 		}
 
-		if (host_client->edict && host_client->spawned)
+		if (host_client->edict && (NUM_FOR_EDICT(host_client->edict)==1 || pretendsp.value==0) && host_client->spawned) // ignore for other players when pretendsp
 		{
 		// call the prog function for removing a client
 		// this will set the body to a dead frame, among other things
@@ -646,7 +650,7 @@ void Host_ServerFrame (void)
 
 // move things around and think
 // always pause in single player if in console or menus
-	if (!sv.paused && (svs.maxclients > 1 || key_dest == key_game) )
+	if (!sv.paused && ((pretendsp.value==0 && svs.maxclients > 1) || key_dest == key_game) )
 		SV_Physics ();
 
 //johnfitz -- devstats

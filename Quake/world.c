@@ -791,6 +791,7 @@ void SV_ClipToLinks ( areanode_t *node, moveclip_t *clip )
 	link_t		*l, *next;
 	edict_t		*touch;
 	trace_t		trace;
+	int		i;
 
 // touch linked edicts
 	for (l = node->solid_edicts.next ; l != &node->solid_edicts ; l = next)
@@ -800,6 +801,9 @@ void SV_ClipToLinks ( areanode_t *node, moveclip_t *clip )
 		if (touch->v.solid == SOLID_NOT)
 			continue;
 		if (touch == clip->passedict)
+			continue;
+		i=NUM_FOR_EDICT(touch);
+		if (pretendsp.value!=0 && ( i<=svs.maxclients && i>=2 )) // ignore other player when pretendsp
 			continue;
 		if (touch->v.solid == SOLID_TRIGGER)
 			Sys_Error ("Trigger in clipping list");

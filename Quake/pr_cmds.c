@@ -277,10 +277,13 @@ static void PF_setsize (void)
 {
 	edict_t	*e;
 	float	*minvec, *maxvec;
-
+	
 	e = G_EDICT(OFS_PARM0);
 	minvec = G_VECTOR(OFS_PARM1);
 	maxvec = G_VECTOR(OFS_PARM2);
+	if (Q_strcmp(PR_GetString(e->v.classname), "teledeath")==0&&pretendsp.value!=0) //hack to disable telefrag when pretendsp
+		e->v.solid = SOLID_NOT;
+
 	SetMinMaxSize (e, minvec, maxvec, false);
 }
 
@@ -787,6 +790,8 @@ static int PF_newcheckclient (int check)
 			break;	// didn't find anything else
 
 		if (ent->free)
+			continue;
+		if (( i<=svs.maxclients && i>=2 ) && pretendsp.value!=0)
 			continue;
 		if (ent->v.health <= 0)
 			continue;
@@ -1399,11 +1404,15 @@ static void PF_aim (void)
 	VectorCopy (pr_global_struct->v_forward, dir);
 	VectorMA (start, 2048, dir, end);
 	tr = SV_Move (start, vec3_origin, vec3_origin, end, false, ent);
+	//Con_Printf("PF_aim\n");
 	if (tr.ent && tr.ent->v.takedamage == DAMAGE_AIM
-		&& (!teamplay.value || ent->v.team <= 0 || ent->v.team != tr.ent->v.team) )
+		&& (!teamplay.value || ent->v.team <= 0 || ent->v.team != tr.ent->v.team))
 	{
-		VectorCopy (pr_global_struct->v_forward, G_VECTOR(OFS_RETURN));
-		return;
+		//i = NUM_FOR_EDICT(tr.ent);
+		//if (!(pretendsp.value!=0 && ( i<=svs.maxclients && i>=2 ))) { // ignore other player when pretendsp
+			VectorCopy (pr_global_struct->v_forward, G_VECTOR(OFS_RETURN));
+			return;
+		//}
 	}
 
 // try all possible entities
@@ -1420,6 +1429,9 @@ static void PF_aim (void)
 			continue;
 		if (teamplay.value && ent->v.team > 0 && ent->v.team == check->v.team)
 			continue;	// don't aim at teammate
+		if (pretendsp.value!=0 && ( i<=svs.maxclients && i>=2 )) // ignore other player when pretendsp
+			//Con_Printf("PF_aim pretendsp iter loop not passed\n");
+			continue;
 		for (j = 0; j < 3; j++)
 			end[j] = check->v.origin[j] + 0.5 * (check->v.mins[j] + check->v.maxs[j]);
 		VectorSubtract (end, start, dir);
@@ -1427,6 +1439,7 @@ static void PF_aim (void)
 		dist = DotProduct (dir, pr_global_struct->v_forward);
 		if (dist < bestdist)
 			continue;	// to far to turn
+		//Con_Printf("PF_aim iter found better match\n");
 		tr = SV_Move (start, vec3_origin, vec3_origin, end, false, ent);
 		if (tr.ent == check)
 		{	// can shoot at this one

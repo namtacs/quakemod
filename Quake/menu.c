@@ -360,7 +360,7 @@ void M_SinglePlayer_Draw (void)
 	M_DrawTransPic (54, 32 + m_singleplayer_cursor * 20,Draw_CachePic( va("gfx/menudot%i.lmp", f+1 ) ) );
 }
 
-
+int maxplayers;
 void M_SinglePlayer_Key (int key)
 {
 	switch (key)
@@ -397,9 +397,15 @@ void M_SinglePlayer_Key (int key)
 			key_dest = key_game;
 			if (sv.active)
 				Cbuf_AddText ("disconnect\n");
-			Cbuf_AddText ("maxplayers 1\n");
-			Cbuf_AddText ("deathmatch 0\n"); //johnfitz
-			Cbuf_AddText ("coop 0\n"); //johnfitz
+			net_hostport = DEFAULTnet_hostport;
+			Cbuf_AddText ("stopdemo\n");
+			Cbuf_AddText ("pretendsp 1\n");
+			Cbuf_AddText ("listen 0\n"); // to acknowledge net_hostport change
+			maxplayers=svs.maxclientslimit;
+			Cbuf_AddText ( va ("maxplayers %u\n", maxplayers) );
+			Cbuf_AddText ("deathmatch 0\n");
+			Cbuf_AddText ("coop 1\n");
+			Cbuf_AddText ("teamplay 0\n");
 			Cbuf_AddText ("map start\n");
 			break;
 
@@ -474,7 +480,7 @@ void M_Menu_Save_f (void)
 		return;
 	if (cl.intermission)
 		return;
-	if (svs.maxclients != 1)
+	if (svs.maxclients != 1 && pretendsp.value==0)
 		return;
 	m_entersound = true;
 	m_state = m_save;
@@ -540,6 +546,16 @@ void M_Load_Key (int k)
 		SCR_BeginLoadingPlaque ();
 
 	// issue the load command
+		if (sv.active)
+			Cbuf_AddText ("disconnect\n");
+		Cbuf_AddText ("pretendsp 1\n");
+		net_hostport = DEFAULTnet_hostport;
+		Cbuf_AddText ("listen 0\n"); // to acknowledge net_hostport change
+		maxplayers=svs.maxclientslimit;
+		Cbuf_AddText ( va ("maxplayers %u\n", maxplayers) );
+		Cbuf_AddText ("deathmatch 0\n");
+		Cbuf_AddText ("coop 1\n");
+		Cbuf_AddText ("teamplay 0\n");
 		Cbuf_AddText (va ("load s%i\n", load_cursor) );
 		return;
 
@@ -2082,7 +2098,6 @@ episode_t	rogueepisodes[] =
 
 int	startepisode;
 int	startlevel;
-int maxplayers;
 qboolean m_serverInfoMessage = false;
 double m_serverInfoMessageTime;
 
@@ -2370,6 +2385,7 @@ void M_GameOptions_Key (int key)
 				Cbuf_AddText ("disconnect\n");
 			Cbuf_AddText ("listen 0\n");	// so host_netport will be re-examined
 			Cbuf_AddText ( va ("maxplayers %u\n", maxplayers) );
+			Cbuf_AddText ("pretendsp 0\n");
 			SCR_BeginLoadingPlaque ();
 
 			if (hipnotic)
